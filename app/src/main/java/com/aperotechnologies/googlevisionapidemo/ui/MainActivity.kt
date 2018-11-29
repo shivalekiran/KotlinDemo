@@ -7,13 +7,17 @@ import android.graphics.*
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.support.constraint.solver.widgets.Rectangle
 import android.support.v4.content.FileProvider
 import android.util.Log
 import android.widget.Toast
 import com.aperotechnologies.googlevisionapidemo.R
+import com.aperotechnologies.googlevisionapidemo.graphics_utils.MyGraphic
 import com.aperotechnologies.googlevisionapidemo.utils.BaseActivity
 import com.aperotechnologies.googlevisionapidemo.utils.PermissionUtils
 import com.google.firebase.ml.vision.FirebaseVision
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode
+import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.common.FirebaseVisionPoint
 import com.google.firebase.ml.vision.face.FirebaseVisionFace
@@ -52,7 +56,7 @@ class MainActivity : BaseActivity() {
         cheekColor.strokeWidth = 5.0f
 
         mouthColor = Paint()
-        mouthColor.color = Color.GREEN
+        mouthColor.color = Color.YELLOW
         mouthColor.strokeWidth = 5.0f
 
         eyeColor = Paint()
@@ -91,7 +95,50 @@ class MainActivity : BaseActivity() {
                 Toast.makeText(this, resources.getText(R.string.select_image), Toast.LENGTH_LONG).show()
             }
         }
+        btn_barcode_scan.setOnClickListener { view ->
+            if (imageBitmap != null) {
+                barcodeScanFun(imageBitmap!!)
+            } else {
+                Toast.makeText(this, resources.getText(R.string.select_image), Toast.LENGTH_LONG).show()
+            }
+        }
         fab.setOnClickListener { view -> selectImage(this) }
+    }
+
+    private fun barcodeScanFun(imageBitmap: Bitmap) {
+        val option = FirebaseVisionBarcodeDetectorOptions.Builder()
+                .setBarcodeFormats(FirebaseVisionBarcode.FORMAT_ALL_FORMATS)
+                .build()
+        val imgae = FirebaseVisionImage.fromBitmap(imageBitmap);
+        val detector = FirebaseVision.getInstance().getVisionBarcodeDetector(option)
+        detector.detectInImage(imgae)
+                .addOnSuccessListener { barcodes ->
+                    Log.e(TAG, "Barcode size: ${barcodes.size}")
+                    text_title_msg.text = "Got barcode"
+                    var displayVal = ""
+                    for (barcode: FirebaseVisionBarcode in barcodes) {
+                        displayVal += barcode.displayValue.toString() + "\n";
+                        val moreinfo = when (barcode.valueType) {
+                            FirebaseVisionBarcode.TYPE_URL -> barcode.url.toString()
+                            FirebaseVisionBarcode.TYPE_CONTACT_INFO -> barcode.contactInfo.toString()
+                            FirebaseVisionBarcode.TYPE_PHONE -> barcode.phone.toString()
+                            FirebaseVisionBarcode.TYPE_CALENDAR_EVENT -> barcode.calendarEvent.toString()
+                            FirebaseVisionBarcode.TYPE_DRIVER_LICENSE -> barcode.driverLicense.toString()
+                            FirebaseVisionBarcode.TYPE_EMAIL -> barcode.email.toString()
+                            FirebaseVisionBarcode.TYPE_GEO -> "lat-" + barcode.geoPoint!!.lat.toString() + "lng-" + barcode.geoPoint!!.lng.toShort()
+                            FirebaseVisionBarcode.TYPE_SMS -> barcode.sms.toString()
+                            else -> ""
+                        }
+                        if (!displayVal.isEmpty()) {
+                            displayVal += moreinfo
+                        }
+                    }
+                    text_title_msg.text = displayVal;
+                }
+                .addOnFailureListener { e ->
+
+                }
+
     }
 
 
@@ -125,10 +172,11 @@ class MainActivity : BaseActivity() {
                         val rotY = face.headEulerAngleY //  head rotate at y with degree
                         val rotZ = face.headEulerAngleZ  //
                         val canvas = Canvas(imageBitmap)
-                        drawRect(imageBitmap, bounds, faceSquare)
+                        drawRect(bounds, faceSquare)
 
+                        var trackingId: Int? = -1
                         if (face.trackingId != FirebaseVisionFace.INVALID_ID) {
-                            val trackingId: Int? = face.trackingId
+                            trackingId = face.trackingId;
                             var userName: String? = "user_${trackingId}"
                             if (!userList.containsKey(trackingId)) {
                                 userList.put(trackingId!!, userName!!)
@@ -147,6 +195,7 @@ class MainActivity : BaseActivity() {
 
                         if (face.smilingProbability != FirebaseVisionFace.UNCOMPUTED_PROBABILITY) {
                             smilingProbability = face.smilingProbability
+                            Log.e(TAG, "Smiling Probability : " + smilingProbability + "Of user: " + trackingId.toString())
                         }
                         val leftMouth = face.getLandmark(FirebaseVisionFaceLandmark.MOUTH_LEFT)
                         if (leftMouth != null) {
@@ -202,16 +251,14 @@ class MainActivity : BaseActivity() {
                 }
     }
 
-    fun drawRect(bitmap: Bitmap, rect: Rect, paint: Paint) {
-        val canvas: Canvas = Canvas(bitmap)
-        canvas.drawRect(rect, paint)
-        canvas.save()
+    fun drawRect(rect: Rect, paint: Paint) {
+        val drawrect = MyGraphic(graphic_overlay, Rectangle(), rect, paint)
+        graphic_overlay.add(drawrect)
     }
 
     fun drawPoint(bitmap: Bitmap, fbvPoint: FirebaseVisionPoint, paint: Paint) {
-        val canvas = Canvas(bitmap);
-        canvas.drawPoint(fbvPoint.x, fbvPoint.y, paint)
-        canvas.save()
+        val drawPoint = MyGraphic(graphic_overlay, Point(), fbvPoint, paint)
+        graphic_overlay.add(drawPoint)
     }
 
 
@@ -245,6 +292,7 @@ class MainActivity : BaseActivity() {
         uri.let {
             try {
                 text_title_msg.text = "Use floating action button to detect"
+                graphic_overlay.clear()
                 // scale the image to save on bandwidth
                 val bitmap = scaleBitmapDown(MediaStore.Images.Media.getBitmap(contentResolver, uri), BaseActivity.MAX_DIMENSION)
                 bitmap?.let {

@@ -25,9 +25,11 @@ public class GraphicOverlay extends View {
      */
     public abstract static class Graphic {
         private GraphicOverlay overlay;
+        public Object object = new Object();
 
-        public Graphic(GraphicOverlay overlay) {
+        public Graphic(GraphicOverlay overlay, Object type) {
             this.overlay = overlay;
+            object = type;
         }
 
         /**
