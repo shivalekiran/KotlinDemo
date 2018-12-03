@@ -59,11 +59,11 @@
                 app:layout_constraintTop_toBottomOf="@+id/text_title_msg"
                 app:layout_constraintVertical_bias="0.0">
 
-                <com.aperotechnologies.googlevisionapidemo.graphics_utils.GraphicOverlay
-                    android:id="@+id/graphic_overlay"
-                    android:layout_width="350dp"
-                    android:layout_height="400dp"
-                    android:layout_gravity="center" />
+                <!--<com.aperotechnologies.googlevisionapidemo.graphics_utils.GraphicOverlay-->
+                    <!--android:id="@+id/graphic_overlay"-->
+                    <!--android:layout_width="350dp"-->
+                    <!--android:layout_height="400dp"-->
+                    <!--android:layout_gravity="center" />-->
             </FrameLayout>
 
         </android.support.constraint.ConstraintLayout>

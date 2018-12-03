@@ -7,17 +7,18 @@ import android.graphics.*
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
-import android.support.constraint.solver.widgets.Rectangle
 import android.support.v4.content.FileProvider
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
 import com.aperotechnologies.googlevisionapidemo.R
-import com.aperotechnologies.googlevisionapidemo.graphics_utils.MyGraphic
 import com.aperotechnologies.googlevisionapidemo.utils.BaseActivity
 import com.aperotechnologies.googlevisionapidemo.utils.PermissionUtils
 import com.google.firebase.ml.vision.FirebaseVision
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcode
 import com.google.firebase.ml.vision.barcode.FirebaseVisionBarcodeDetectorOptions
+import com.google.firebase.ml.vision.cloud.FirebaseVisionCloudDetectorOptions
 import com.google.firebase.ml.vision.common.FirebaseVisionImage
 import com.google.firebase.ml.vision.common.FirebaseVisionPoint
 import com.google.firebase.ml.vision.face.FirebaseVisionFace
@@ -103,6 +104,34 @@ class MainActivity : BaseActivity() {
             }
         }
         fab.setOnClickListener { view -> selectImage(this) }
+
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.mymenu, menu);
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem?): Boolean {
+        when (item!!.itemId) {
+            R.id.scan_act -> {
+                val intent = Intent(this, ZingScanActivity::class.java)
+                startActivity(intent);
+            }
+            else -> {
+                return super.onOptionsItemSelected(item)
+            }
+        }
+        return super.onOptionsItemSelected(item)
+    }
+
+    private fun landmarkDetection(imageBitmap: Bitmap) {
+
+        val option = FirebaseVisionCloudDetectorOptions.Builder()
+                .setModelType(FirebaseVisionCloudDetectorOptions.LATEST_MODEL)
+                .setMaxResults(15)
+                .build()
+
     }
 
     private fun barcodeScanFun(imageBitmap: Bitmap) {
@@ -252,13 +281,13 @@ class MainActivity : BaseActivity() {
     }
 
     fun drawRect(rect: Rect, paint: Paint) {
-        val drawrect = MyGraphic(graphic_overlay, Rectangle(), rect, paint)
-        graphic_overlay.add(drawrect)
+//        val drawrect = MyGraphic(graphic_overlay, Rectangle(), rect, paint)
+//        graphic_overlay.add(drawrect)
     }
 
     fun drawPoint(bitmap: Bitmap, fbvPoint: FirebaseVisionPoint, paint: Paint) {
-        val drawPoint = MyGraphic(graphic_overlay, Point(), fbvPoint, paint)
-        graphic_overlay.add(drawPoint)
+//        val drawPoint = MyGraphic(graphic_overlay, Point(), fbvPoint, paint)
+//        graphic_overlay.add(drawPoint)
     }
 
 
@@ -292,7 +321,7 @@ class MainActivity : BaseActivity() {
         uri.let {
             try {
                 text_title_msg.text = "Use floating action button to detect"
-                graphic_overlay.clear()
+//                graphic_overlay.clear()
                 // scale the image to save on bandwidth
                 val bitmap = scaleBitmapDown(MediaStore.Images.Media.getBitmap(contentResolver, uri), BaseActivity.MAX_DIMENSION)
                 bitmap?.let {
